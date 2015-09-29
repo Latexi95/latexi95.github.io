@@ -147,7 +147,9 @@ function Graph(svg, timelineData, dId, yAxisName, area) {
         .data(function(d) {return d.values; })
         .enter().append("circle")
         .attr("class", "data-circle")
-        .attr("cx", function(d) { return g.x(d.time); } )
+        .attr("cx", function(d) {
+            return g.x(d.time);
+        } )
         .attr("cy", function(d) { return g.y(d[g.dataId]);} )
         .attr("r", 4.5)
         .style("fill", function (d){
@@ -220,8 +222,68 @@ Graph.prototype.updateData = function(dId, yAxisName) {
         valMax + (valMax - valMin)* 0.05
     ]);
 
-    g.svg.selectAll(".summoner")
+    g.line = d3.svg.line()
+        .interpolate("cardinal")
+        .x(function (d) {
+            return g.x(d.time);
+        })
+        .y(function (d) {
+            return g.y(d[g.dataId]);
+        });
+
+    g.svg.append("g")
+        .attr("class", "x-axis")
+        .attr("transform", "translate(0," + g.area.height + ")")
+        .call(g.xAxis);
+
+
+    var xAxisGrid = d3.svg.axis().scale(g.x)
+        .ticks(maxTime)
+        .tickSize(-g.area.height, 0)
+        .tickFormat("")
+        .orient("top");
+
+    var yAxisGrid = d3.svg.axis().scale(g.y)
+        //.ticks(valMax / 1000)
+        .tickSize(-g.area.width, 0)
+        .tickFormat("")
+        .orient("left");
+
+    /*g.svg.append("g")
+        .classed("x", true)
+        .classed("axis", true)
+        .call(xAxisGrid);
+
+    g.svg.append("g")
+        .classed("y", true)
+        .classed("axis", true)
+        .call(yAxisGrid);*/
+
+
+    var summonerD = g.svg.selectAll(".summoner")
         .data(g.timelineData);
+
+    var summoner = summonerD.enter().append("g")
+        .attr("class", "summoner");
+
+    //summonerD.exit().remove();
+
+    summoner.append("path")
+        .attr("id", "path")
+        .attr("class", "line")
+        .attr("d", function (d) {
+            return g.line(d.values);
+        })
+
+    summoner.append("path")
+        .attr("id", "path")
+        .attr("class", "line")
+        .attr("d", function (d) {
+            return g.line(d.values);
+        })
+        .style("stroke", function (d) {
+            return g.color(d.name);
+        });
 }
 
 var timelineDataKeys = [
