@@ -1,88 +1,95 @@
 
+function Graph(svg, timelineData, dId, yAxisName, area) {
+    this.dataId = dId;
+    this.timelineData = timelineData;
+    this.svg = svg;
+    this.x = d3.scale.linear().range([0, area.width]);
+    this.y = d3.scale.linear().range([area.height, 0]);
+    this.area = area;
 
-function plotTimelineData(svg, timelineData, dataId, yAxisName, area) {
+    var g = this;
 
-    var x = d3.scale.linear().range([0, area.width]);
-    var y = d3.scale.linear().range([area.height, 0]);
+    this.color = d3.scale.category10();
 
-    var color = d3.scale.category10();
+    g.xAxis = d3.svg.axis().scale(g.x).orient("bottom");
+    g.yAxis = d3.svg.axis().scale(g.y).orient("left");
 
-    var xAxis = d3.svg.axis().scale(x).orient("bottom");
-    var yAxis = d3.svg.axis().scale(y).orient("left");
-
-    var line = d3.svg.line()
+    g.line = d3.svg.line()
         .interpolate("cardinal")
         .x(function (d) {
-            return x(d.time);
+            return g.x(d.time);
         })
         .y(function (d) {
-            return y(d[dataId]);
+            return g.y(d[g.dataId]);
         });
 
 
-    color.domain(timelineData.map(function (summoner) {
+    g.color.domain(timelineData.map(function (summoner) {
         return summoner.name;
     }));
 
 
-    var maxTime = d3.max(timelineData, function (summoner) {
+    var maxTime = d3.max(g.timelineData, function (summoner) {
         return summoner.maxValues.time;
     });
 
-    x.domain([0, maxTime]);
+    g.x.domain([0, maxTime]);
 
     var valMin = 0;
     var valMax = 0;
     timelineData.forEach(function (summoner) {
-        valMax = Math.max(valMax, summoner.maxValues[dataId]);
-        valMin = Math.min(valMin, summoner.minValues[dataId]);
+        valMax = Math.max(valMax, summoner.maxValues[g.dataId]);
+        valMin = Math.min(valMin, summoner.minValues[g.dataId]);
     });
 
-    y.domain([
+    g.y.domain([
         valMin,
         valMax + (valMax - valMin)* 0.05
     ]);
 
 
-    svg.append("g")
+    g.svg.append("g")
         .attr("class", "x-axis")
-        .attr("transform", "translate(0," + area.height + ")")
-        .call(xAxis);
+        .attr("transform", "translate(0," + g.area.height + ")")
+        .call(g.xAxis);
 
 
-    var xAxisGrid = d3.svg.axis().scale(x)
+    var xAxisGrid = d3.svg.axis().scale(g.x)
         .ticks(maxTime)
-        .tickSize(-area.height, 0)
+        .tickSize(-g.area.height, 0)
         .tickFormat("")
         .orient("top");
 
-    var yAxisGrid = d3.svg.axis().scale(y)
+    var yAxisGrid = d3.svg.axis().scale(g.y)
         //.ticks(valMax / 1000)
-        .tickSize(-area.width, 0)
+        .tickSize(-g.area.width, 0)
         .tickFormat("")
         .orient("left");
 
-    svg.append("g")
+    g.svg.append("g")
         .classed("x", true)
         .classed("axis", true)
         .call(xAxisGrid);
 
-    svg.append("g")
+    g.svg.append("g")
         .classed("y", true)
         .classed("axis", true)
         .call(yAxisGrid);
 
-    var summoner = svg.selectAll(".summoner")
-        .data(timelineData)
-        .enter().append("g")
+    var summonerD = g.svg.selectAll(".summoner")
+        .data(g.timelineData);
+
+    var summoner = summonerD.enter().append("g")
         .attr("class", "summoner");
+
+    summonerD.exit().remove();
 
 
     var bisector = d3.bisector(function(v) { return v.time;}).left;
 
     function mouseOverCircle(circle) {
         var d = circle.parentNode.__data__;
-        var x0 = x.invert(d3.mouse(circle)[0]);
+        var x0 = g.x.invert(d3.mouse(circle)[0]);
         var i = bisector(d.values, x0, 1);
         var d0 = d.values[i - 1];
         var d1 = d.values[i];
@@ -96,9 +103,9 @@ function plotTimelineData(svg, timelineData, dataId, yAxisName, area) {
 
         focus.select("text.mouseover")
             .attr("transform",
-            "translate(" + x(d.time) + "," +
-            y(d[dataId]) + ")")
-            .text(d[dataId]);
+            "translate(" + g.x(d.time) + "," +
+            g.y(d[g.dataId]) + ")")
+            .text(d[g.dataId]);
     }
 
     var focus = svg.append("g")
@@ -118,10 +125,10 @@ function plotTimelineData(svg, timelineData, dataId, yAxisName, area) {
         .attr("id", "path")
         .attr("class", "line")
         .attr("d", function (d) {
-            return line(d.values);
+            return g.line(d.values);
         })
         .style("stroke", function (d) {
-            return color(d.name);
+            return g.color(d.name);
         })
         //.on("mouseover", function(d) {
         //    svg.selectAll("path.line").sort(function (a, b){
@@ -140,8 +147,8 @@ function plotTimelineData(svg, timelineData, dataId, yAxisName, area) {
         .data(function(d) {return d.values; })
         .enter().append("circle")
         .attr("class", "data-circle")
-        .attr("cx", function(d) { return x(d.time); } )
-        .attr("cy", function(d) { return y(d[dataId]);} )
+        .attr("cx", function(d) { return g.x(d.time); } )
+        .attr("cy", function(d) { return g.y(d[g.dataId]);} )
         .attr("r", 4.5)
         .style("fill", function (d){
             if (this.parentNode.__data__.team) {
@@ -152,7 +159,7 @@ function plotTimelineData(svg, timelineData, dataId, yAxisName, area) {
             }
         })
         .style("stroke", function (d) {
-            return color(this.parentNode.__data__.name);
+            return g.color(this.parentNode.__data__.name);
         })
         .on("mouseover", function(d) {
             focus.style("display", null);
@@ -162,9 +169,9 @@ function plotTimelineData(svg, timelineData, dataId, yAxisName, area) {
             mouseOverCircle(this);
         });
 
-    svg.append("g")
+    g.svg.append("g")
         .attr("class", "y-axis")
-        .call(yAxis)
+        .call(g.yAxis)
         .append("text")
         .attr("class", "text")
         .attr("transform", "rotate(-90)")
@@ -179,13 +186,42 @@ function plotTimelineData(svg, timelineData, dataId, yAxisName, area) {
             return {name: d.name, value: d.values[d.values.length - 1]};
         })
         .attr("transform", function (d) {
-            return "translate(" + x(d.value.time) + "," + y(d.value[dataId]) + ")";
+            return "translate(" + g.x(d.value.time) + "," + g.y(d.value[g.dataId]) + ")";
         })
         .attr("x", 3)
         .attr("dy", ".35em")
         .text(function (d) {
             return d.name;
         });
+
+}
+
+Graph.prototype.updateData = function(dId, yAxisName) {
+    this.dataId = dId;
+    var g = this;
+
+    g.svg.selectAll(".y-axis > text.text")
+        .text(yAxisName);
+
+    var maxTime = d3.max(g.timelineData, function (summoner) {
+        return summoner.maxValues.time;
+    });
+
+
+    var valMin = 0;
+    var valMax = 0;
+    g.timelineData.forEach(function (summoner) {
+        valMax = Math.max(valMax, summoner.maxValues[g.dataId]);
+        valMin = Math.min(valMin, summoner.minValues[g.dataId]);
+    });
+
+    g.y.domain([
+        valMin,
+        valMax + (valMax - valMin)* 0.05
+    ]);
+
+    g.svg.selectAll(".summoner")
+        .data(g.timelineData);
 }
 
 var timelineDataKeys = [

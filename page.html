@@ -50,6 +50,7 @@
 
 
 <div class="plot">
+
 </div>
 
 <select id="show" onchange="updatePlot()">
@@ -67,8 +68,13 @@
         width: 960 - margin.left - margin.right,
         height: 500 - margin.top - margin.bottom
     }
+    var svg = d3.select("body").append("svg")
+            .attr("width", area.width + area.margin.left + area.margin.right)
+            .attr("height", area.height + area.margin.top + area.margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + area.margin.left + "," + area.margin.top + ")");
 
-
+    var g = new Graph(svg, timelineData, "totalGold", "Total gold", area);
     function updatePlot() {
         var plotType = document.getElementById("show").value;
         var timelineDataNames = {
@@ -87,14 +93,7 @@
 
         var yAxisName = timelineDataNames[plotType];
         if (yAxisName) {
-            d3.select("svg").remove();
-            var svg = d3.select("body").append("svg")
-                    .attr("width", area.width + area.margin.left + area.margin.right)
-                    .attr("height", area.height + area.margin.top + area.margin.bottom)
-                    .append("g")
-                    .attr("transform", "translate(" + area.margin.left + "," + area.margin.top + ")");
-
-            plotTimelineData(svg, timelineData, plotType, yAxisName, area);
+            g.updateData(plotType, yAxisName);
         }
     }
 
