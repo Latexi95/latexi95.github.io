@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+
+        body {
+            font: 10px sans-serif;
+        }
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .x-axis path {
+            display: none;
+        }
+
+        .y-axis > text {
+            font-weight: bold;
+            fill: #d4b215;
+            stroke: #000;
+            font-size: 200%;
+        }
+
+        .line {
+            fill: none;
+            stroke-width: 2.5px;
+            opacity: 0.7;
+        }
+
+        .data-circle {
+            stroke-width: 1.5px;
+        }
+
+        .data-circle:hover {
+            stroke-width: 3.0px;
+        }
+
+
+    </style>
+</head>
+<body>
+<script src="d3.v3.min.js" charset="utf-8"></script>
+<script src="data.js" charset="utf-8"></script>
+<script src="graph.js" charset="utf-8"></script>
+
+
+<div class="plot">
+</div>
+
+<select id="show" onchange="updatePlot()">
+    <option value="totalGold" selected>Gold</option>
+    <option value="goldPerMin">Gold per minute</option>
+    <option value="xp">XP</option>
+    <option value="level">Level</option>
+</select>
+<script>
+    var timelineData = getTimelineData(testData);
+
+    var margin = {top: 20, right: 100, bottom: 30, left: 50};
+    var area = {
+        margin: margin,
+        width: 960 - margin.left - margin.right,
+        height: 500 - margin.top - margin.bottom
+    }
+
+
+    function updatePlot() {
+        var plotType = document.getElementById("show").value;
+        var timelineDataNames = {
+            "xp": "XP",
+            "xpPerMin": "XP per min",
+            "totalGold": "Total gold",
+            "goldPerMin": "Gold per min",
+            "minionsKilled": "Minions killed",
+            "monstersKilled": "Monsters killed",
+            "currentGold": "Current gold",
+            "posX": "Position X",
+            "posY": "Position Y",
+            "level": "Level",
+            "time": "Time"
+        };
+
+        var yAxisName = timelineDataNames[plotType];
+        if (yAxisName) {
+            d3.select("svg").remove();
+            var svg = d3.select("body").append("svg")
+                    .attr("width", area.width + area.margin.left + area.margin.right)
+                    .attr("height", area.height + area.margin.top + area.margin.bottom)
+                    .append("g")
+                    .attr("transform", "translate(" + area.margin.left + "," + area.margin.top + ")");
+
+            plotTimelineData(svg, timelineData, plotType, yAxisName, area);
+        }
+    }
+
+    updatePlot();
+</script>
+
+
+</body>
+</html>
